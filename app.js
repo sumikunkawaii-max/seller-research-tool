@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   settings: 'sr_settings',
   activeSeller: 'sr_active',
   presets: 'sr_presets',
+  monitors: 'sr_monitors',
 };
 
 // Keepa CSV_TYPE定数（利益計算ツールと同じ）
@@ -42,6 +43,7 @@ let searchQuery = '';
 let currentMode = 'seller';
 let currentProducts = []; // 条件検索結果用
 let presets = []; // 保存済み検索条件
+let monitors = []; // URL監視リスト
 
 // === ユーティリティ ===
 
@@ -505,12 +507,13 @@ function escapeHtml(str) {
 
 // === モード切り替え ===
 
-// サイドバーのセラー検索/条件検索モード切り替え
+// サイドバーのセラー検索/条件検索/監視モード切り替え
 function switchMode(mode, btn) {
   currentMode = mode;
   document.querySelectorAll('.sidebar-mode-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('sellerPanel').style.display = mode === 'seller' ? '' : 'none';
+  document.getElementById('monitorPanel').style.display = mode === 'monitor' ? '' : 'none';
   document.getElementById('criteriaPanel').style.display = mode === 'criteria' ? '' : 'none';
 }
 
@@ -713,6 +716,280 @@ function buildPresetDesc(c) {
   return parts.join(' / ') || '条件なし';
 }
 
+// === 監視機能 ===
+
+// Keepa Product Finder URLから条件をパース
+function parseKeepaFinderUrl(url) {
+  try {
+    const match = url.match(/#!finder\/(.+)/);
+    if (!match) return null;
+    const decoded = decodeURIComponent(match[1]);
+    return JSON.parse(decoded);
+  } catch { return null; }
+}
+
+// モニター追加
+function addMonitor() {
+  const input = document.getElementById('monitorUrlInput');
+  const url = input.value.trim();
+  if (!url || !url.includes('keepa.com')) {
+    showToast('Keepa Product FinderのURLを貼り付けてください', 'error');
+    return;
+  }
+
+  const criteria = parseKeepaFinderUrl(url);
+  const name = prompt('この監視条件の名前を入力してください:');
+  if (!name) return;
+
+  monitors.push({
+    id: Date.now(),
+    name: name,
+    url: url,
+    criteria: criteria,
+    lastResults: [],
+    lastProducts: [],
+    lastFetched: null,
+    history: [],
+  });
+  saveMonitors();
+  input.value = '';
+  renderMonitorList();
+  showToast('「' + name + '」を追加しました');
+}
+
+// モニター選択・表示
+function selectMonitor(monitorId) {
+  const monitor = monitors.find(m => m.id === monitorId);
+  if (!monitor) return;
+
+  activeSellerIdState = null;
+  saveActiveSeller(null);
+  renderSidebar();
+
+  // メインエリアにモニター結果を表示
+  document.getElementById('mainHeader').style.display = 'flex';
+  document.getElementById('sellerTitle').textContent = monitor.name;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('tableCard').style.display = 'block';
+
+  if (monitor.lastProducts.length > 0) {
+    document.getElementById('sellerProductCount').textContent = monitor.lastProducts.length + '件';
+    currentProducts = monitor.lastProducts;
+    renderTable(currentProducts);
+  } else {
+    document.getElementById('sellerProductCount').textContent = '未取得';
+    document.getElementById('tableCard').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'flex';
+    document.getElementById('emptyState').innerHTML =
+      '<span class="material-symbols-outlined empty-icon">update</span>' +
+      '<h3>まだデータがありません</h3>' +
+      '<p>「最新データ取得」ボタンでデータを取得してください</p>';
+  }
+
+  // fetchBtnのonclickを監視更新に変更
+  const fetchBtn = document.getElementById('fetchBtn');
+  fetchBtn.onclick = () => updateMonitor(monitorId);
+  fetchBtn.innerHTML = '<span class="material-symbols-outlined">sync</span> 最新データ取得';
+
+  // 更新ボタンも同じ
+  const refreshBtn = document.querySelector('.btn-fetch-secondary');
+  if (refreshBtn) {
+    refreshBtn.onclick = () => updateMonitor(monitorId);
+  }
+
+  // 監視アイテムをアクティブに
+  document.querySelectorAll('.monitor-item').forEach(el => el.classList.remove('active'));
+  const activeEl = document.querySelector('.monitor-item[data-id="' + monitorId + '"]');
+  if (activeEl) activeEl.classList.add('active');
+}
+
+// モニター更新（Product FinderのURL条件でKeepa APIを呼ぶ）
+async function updateMonitor(monitorId) {
+  const monitor = monitors.find(m => m.id === monitorId);
+  if (!monitor) return;
+
+  const apiKey = settings.keepaApiKey;
+  if (!apiKey) {
+    showToast('Keepa APIキーを設定してください', 'error');
+    openSettings();
+    return;
+  }
+
+  showLoading(true, '「' + monitor.name + '」を検索中...');
+
+  try {
+    // Keepa Product Finder APIで検索
+    const selection = buildSelectionFromCriteria(monitor.criteria);
+    selection.perPage = 100;
+    selection.page = 0;
+
+    const url = 'https://api.keepa.com/query?key=' + encodeURIComponent(apiKey) +
+                '&domain=5&selection=' + encodeURIComponent(JSON.stringify(selection));
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.error) {
+      hideLoading();
+      showToast('Keepa APIエラー: ' + JSON.stringify(data.error), 'error');
+      return;
+    }
+
+    const newAsinList = data.asinList || [];
+    if (!newAsinList.length) {
+      hideLoading();
+      showToast('条件に一致する商品が見つかりませんでした', 'error');
+      return;
+    }
+
+    showLoading(true, newAsinList.length + '件の商品データを取得中...');
+
+    // 商品詳細を取得
+    const products = await fetchProductsBatch(newAsinList, (done, total) => {
+      document.getElementById('loadingText').textContent =
+        '商品データを取得中... (' + done + '/' + total + ')';
+    });
+
+    hideLoading();
+
+    // 前回の結果と比較
+    const prevAsins = new Set(monitor.lastResults);
+    const newAsins = new Set(newAsinList);
+
+    const brandNew = newAsinList.filter(a => !prevAsins.has(a));    // 新規
+    const still = newAsinList.filter(a => prevAsins.has(a));        // 継続
+    const disappeared = monitor.lastResults.filter(a => !newAsins.has(a)); // 消えた
+
+    // 商品にステータスを付与
+    products.forEach(p => {
+      if (brandNew.includes(p.asin)) p._status = 'new';
+      else p._status = 'existing';
+    });
+
+    // 消えた商品は前回のデータから取得
+    const disappearedProducts = (monitor.lastProducts || [])
+      .filter(p => disappeared.includes(p.asin))
+      .map(p => ({ ...p, _status: 'disappeared' }));
+
+    // 全商品を結合（新規 → 継続 → 消えた の順）
+    const allProducts = [
+      ...products.filter(p => p._status === 'new'),
+      ...products.filter(p => p._status === 'existing'),
+      ...disappearedProducts,
+    ];
+
+    // モニターデータを更新
+    monitor.lastResults = newAsinList;
+    monitor.lastProducts = products;
+    monitor.lastFetched = new Date().toISOString();
+    monitor.history.push({ date: new Date().toISOString().slice(0, 10), asins: newAsinList });
+    // 履歴は30日分まで保持
+    if (monitor.history.length > 30) monitor.history = monitor.history.slice(-30);
+    saveMonitors();
+
+    // 結果表示
+    currentProducts = allProducts;
+    document.getElementById('sellerTitle').textContent = monitor.name;
+
+    // 差分サマリー表示
+    let summaryText = allProducts.length + '件';
+    if (monitor.history.length > 1) {
+      summaryText += ' (';
+      if (brandNew.length) summaryText += '新規' + brandNew.length + '件 ';
+      if (disappeared.length) summaryText += '消えた' + disappeared.length + '件';
+      summaryText += ')';
+    }
+    document.getElementById('sellerProductCount').textContent = summaryText;
+
+    renderTable(allProducts);
+    renderMonitorList();
+
+    if (brandNew.length || disappeared.length) {
+      showToast('新規' + brandNew.length + '件、消えた' + disappeared.length + '件');
+    } else {
+      showToast(products.length + '件取得しました（変動なし）');
+    }
+
+  } catch(err) {
+    hideLoading();
+    showToast('更新エラー: ' + err.message, 'error');
+  }
+}
+
+// Keepa URLの条件をAPI用selectionに変換
+function buildSelectionFromCriteria(criteria) {
+  const selection = {};
+  if (!criteria || !criteria.f) return selection;
+
+  const f = criteria.f;
+
+  // productType
+  if (f.productType && f.productType.values) {
+    selection.productType = f.productType.values.map(Number);
+  }
+
+  // 各フィルター（数値型）
+  Object.keys(f).forEach(key => {
+    const filter = f[key];
+    if (filter.filterType === 'number') {
+      if (filter.type === 'inRange') {
+        selection[key + '_MIN'] = filter.filter;
+        selection[key + '_MAX'] = filter.filterTo;
+      } else if (filter.type === 'greaterThan' || filter.type === 'greaterThanOrEqual') {
+        selection[key + '_MIN'] = filter.filter;
+      } else if (filter.type === 'lessThan' || filter.type === 'lessThanOrEqual') {
+        selection[key + '_MAX'] = filter.filter;
+      }
+    }
+  });
+
+  // ソート
+  if (criteria.s && Array.isArray(criteria.s)) {
+    selection.sort = criteria.s.map(s => [s.colId, s.sort || 'asc']);
+  }
+
+  return selection;
+}
+
+// モニター削除
+function deleteMonitor(monitorId, event) {
+  if (event) event.stopPropagation();
+  if (!confirm('この監視条件を削除しますか？')) return;
+  monitors = monitors.filter(m => m.id !== monitorId);
+  saveMonitors();
+  renderMonitorList();
+  showToast('削除しました');
+}
+
+// モニターリスト描画
+function renderMonitorList() {
+  const list = document.getElementById('monitorList');
+  if (!list) return;
+  if (!monitors.length) {
+    list.innerHTML = '<div class="sidebar-empty">Keepa Product FinderのURLを貼り付けて追加してください</div>';
+    return;
+  }
+  list.innerHTML = monitors.map(m => {
+    const fetchedText = m.lastFetched ? new Date(m.lastFetched).toLocaleDateString('ja-JP') + ' 取得' : '未取得';
+    const count = m.lastResults ? m.lastResults.length + '件' : '';
+    return '<div class="monitor-item seller-item" data-id="' + m.id + '" onclick="selectMonitor(' + m.id + ')">' +
+      '<div class="seller-item-info">' +
+        '<div class="seller-name">' + escapeHtml(m.name) + '</div>' +
+        '<div class="seller-meta">' + count + ' ' + fetchedText + '</div>' +
+      '</div>' +
+      '<button class="seller-delete-btn" onclick="deleteMonitor(' + m.id + ', event)" title="削除">' +
+        '<span class="material-symbols-outlined">close</span>' +
+      '</button>' +
+    '</div>';
+  }).join('');
+}
+
+// モニター保存・読み込み
+function loadMonitors() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.monitors)) || []; }
+  catch { return []; }
+}
+function saveMonitors() { localStorage.setItem(STORAGE_KEYS.monitors, JSON.stringify(monitors)); }
+
 // === 描画 ===
 
 // サイドバー描画
@@ -758,8 +1035,8 @@ function renderMainArea() {
   const tableCard = document.getElementById('tableCard');
 
   if (!activeSellerIdState) {
-    // 条件検索結果が表示中の場合はそのまま維持
-    if (currentProducts.length > 0 && currentMode === 'criteria') return;
+    // 条件検索・監視の結果が表示中の場合はそのまま維持
+    if (currentProducts.length > 0 && (currentMode === 'criteria' || currentMode === 'monitor')) return;
     // セラー未選択
     header.style.display = 'none';
     empty.style.display = 'flex';
@@ -850,7 +1127,9 @@ function renderTable(products) {
   }
 
   tbody.innerHTML = filtered.map(p => {
-    return '<tr>' +
+    // 監視モード: ステータスに応じた行クラス
+    const rowClass = p._status === 'new' ? ' class="row-new"' : p._status === 'disappeared' ? ' class="row-disappeared"' : '';
+    return '<tr' + rowClass + '>' +
       // 画像
       '<td class="col-image">' + renderImageCell(p) + '</td>' +
       // 商品名
@@ -1099,6 +1378,7 @@ document.addEventListener('DOMContentLoaded', () => {
   settings = loadSettings();
   activeSellerIdState = loadActiveSeller();
   loadPresets();
+  monitors = loadMonitors();
 
   // アクティブセラーが存在しない場合はリセット
   if (activeSellerIdState && !sellers.find(s => s.id === activeSellerIdState)) {
@@ -1109,6 +1389,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // イベントリスナー
   document.getElementById('sellerIdInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') addSeller();
+  });
+
+  document.getElementById('monitorUrlInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addMonitor();
   });
 
   document.getElementById('searchInput').addEventListener('input', handleSearch);
@@ -1124,5 +1408,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // 初期描画
   renderSidebar();
   renderPresetList();
+  renderMonitorList();
   renderMainArea();
 });

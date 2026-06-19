@@ -24,7 +24,8 @@
   <!-- サイドバー -->
   <aside class="sidebar">
     <div class="sidebar-mode-tabs">
-      <button class="sidebar-mode-tab active" onclick="switchMode('seller', this)">セラー検索</button>
+      <button class="sidebar-mode-tab active" onclick="switchMode('seller', this)">セラー</button>
+      <button class="sidebar-mode-tab" onclick="switchMode('monitor', this)">監視</button>
       <button class="sidebar-mode-tab" onclick="switchMode('criteria', this)">条件検索</button>
     </div>
 
@@ -37,6 +38,17 @@
         </button>
       </div>
       <div class="sidebar-list" id="sellerList"></div>
+    </div>
+
+    <!-- 監視モード -->
+    <div class="sidebar-panel" id="monitorPanel" style="display:none">
+      <div class="sidebar-add">
+        <input type="text" id="monitorUrlInput" placeholder="Keepa Product Finder URLを貼り付け" spellcheck="false" autocomplete="off">
+        <button class="btn-add-seller" onclick="addMonitor()">
+          <span class="material-symbols-outlined">add</span> 追加
+        </button>
+      </div>
+      <div class="sidebar-list" id="monitorList"></div>
     </div>
 
     <!-- 条件検索モード -->
