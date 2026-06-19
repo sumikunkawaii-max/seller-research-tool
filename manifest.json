@@ -1,6 +1,6 @@
 {
-  "name": "セラーリサーチツール",
-  "short_name": "セラーリサーチ",
+  "name": "リサーチツール",
+  "short_name": "リサーチ",
   "description": "Amazonセラーの商品一覧をリサーチするツール",
   "start_url": "./index.html",
   "display": "standalone",

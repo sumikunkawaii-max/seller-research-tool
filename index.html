@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>セラーリサーチツール</title>
+  <title>リサーチツール</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -18,24 +18,107 @@
   <!-- ツール切り替え -->
   <div class="tool-switcher-bar">
     <a class="tool-tab" href="https://sumikunkawaii-max.github.io/profit-tool-dev/">利益管理</a>
-    <a class="tool-tab active" href="#">セラーリサーチ</a>
+    <a class="tool-tab active" href="#">リサーチ</a>
   </div>
 
   <!-- サイドバー -->
   <aside class="sidebar">
-    <div class="sidebar-header">
-      <span class="material-symbols-outlined sidebar-icon">storefront</span>
-      <h2>セラー一覧</h2>
+    <div class="sidebar-mode-tabs">
+      <button class="sidebar-mode-tab active" onclick="switchMode('seller', this)">セラー検索</button>
+      <button class="sidebar-mode-tab" onclick="switchMode('criteria', this)">条件検索</button>
     </div>
-    <div class="sidebar-add">
-      <input type="text" id="sellerIdInput" placeholder="セラーID または URL" spellcheck="false" autocomplete="off">
-      <button class="btn-add-seller" onclick="addSeller()">
-        <span class="material-symbols-outlined">add</span> 追加
-      </button>
+
+    <!-- セラー検索モード -->
+    <div class="sidebar-panel" id="sellerPanel">
+      <div class="sidebar-add">
+        <input type="text" id="sellerIdInput" placeholder="セラーID または URL" spellcheck="false" autocomplete="off">
+        <button class="btn-add-seller" onclick="addSeller()">
+          <span class="material-symbols-outlined">add</span> 追加
+        </button>
+      </div>
+      <div class="sidebar-list" id="sellerList"></div>
     </div>
-    <div class="sidebar-list" id="sellerList">
-      <!-- セラー一覧がここに描画される -->
+
+    <!-- 条件検索モード -->
+    <div class="sidebar-panel" id="criteriaPanel" style="display:none">
+      <div class="criteria-form">
+        <div class="criteria-field">
+          <label>カテゴリ</label>
+          <select id="criteriaCategory">
+            <option value="">全カテゴリ</option>
+            <option value="2127212051">家電・カメラ</option>
+            <option value="14304371">おもちゃ</option>
+            <option value="3445393051">ドラッグストア</option>
+            <option value="57239051">食品・飲料</option>
+            <option value="2250738051">ビューティー</option>
+            <option value="14315361">スポーツ</option>
+            <option value="2016926051">DIY・工具</option>
+            <option value="2127209051">パソコン</option>
+            <option value="161669011">本</option>
+            <option value="2123629051">ペット用品</option>
+            <option value="352484011">ゲーム</option>
+            <option value="2127213051">文房具</option>
+            <option value="2188554051">ファッション</option>
+            <option value="2017304051">ベビー・マタニティ</option>
+            <option value="3210991">DVD</option>
+            <option value="2351649051">カー用品</option>
+          </select>
+        </div>
+        <div class="criteria-row">
+          <div class="criteria-field">
+            <label>価格 (最小)</label>
+            <input type="number" id="criteriaPriceMin" placeholder="¥">
+          </div>
+          <div class="criteria-field">
+            <label>価格 (最大)</label>
+            <input type="number" id="criteriaPriceMax" placeholder="¥">
+          </div>
+        </div>
+        <div class="criteria-row">
+          <div class="criteria-field">
+            <label>販売数/月 (最小)</label>
+            <input type="number" id="criteriaSalesMin" placeholder="0">
+          </div>
+          <div class="criteria-field">
+            <label>販売数/月 (最大)</label>
+            <input type="number" id="criteriaSalesMax" placeholder="">
+          </div>
+        </div>
+        <div class="criteria-row">
+          <div class="criteria-field">
+            <label>出品者数 (最小)</label>
+            <input type="number" id="criteriaSellersMin" placeholder="0">
+          </div>
+          <div class="criteria-field">
+            <label>出品者数 (最大)</label>
+            <input type="number" id="criteriaSellersMax" placeholder="">
+          </div>
+        </div>
+        <div class="criteria-row">
+          <div class="criteria-field">
+            <label>ランキング (最大)</label>
+            <input type="number" id="criteriaRankMax" placeholder="例: 50000">
+          </div>
+          <div class="criteria-field">
+            <label>レビュー数 (最小)</label>
+            <input type="number" id="criteriaReviewsMin" placeholder="0">
+          </div>
+        </div>
+        <div class="criteria-field">
+          <label>ソート</label>
+          <select id="criteriaSort">
+            <option value="current_SALES">販売数順</option>
+            <option value="current_COUNT_NEW">出品者数順</option>
+            <option value="avg_SALES_RANK">ランキング順</option>
+            <option value="current_NEW">価格順</option>
+          </select>
+        </div>
+        <button class="btn-criteria-search" onclick="searchByCriteria()">
+          <span class="material-symbols-outlined">search</span> 検索
+        </button>
+      </div>
     </div>
+
     <div class="sidebar-footer">
       <button class="btn-sidebar-footer" onclick="openSettings()">
         <span class="material-symbols-outlined">settings</span> 設定
@@ -67,9 +150,9 @@
 
     <!-- 空状態 -->
     <div class="empty-state" id="emptyState">
-      <span class="material-symbols-outlined empty-icon">person_search</span>
-      <h3>セラーが選択されていません</h3>
-      <p>左のサイドバーからセラーを追加・選択してください</p>
+      <span class="material-symbols-outlined empty-icon">search</span>
+      <h3>リサーチを始めましょう</h3>
+      <p>左のサイドバーからセラー検索または条件検索でリサーチできます</p>
     </div>
 
     <!-- テーブル -->

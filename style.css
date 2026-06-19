@@ -1036,3 +1036,113 @@ body {
   margin-top: 4px;
   text-align: center;
 }
+
+/* === サイドバーモードタブ === */
+.sidebar-mode-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--outline, #e0e0e0);
+  background: var(--surface, #fff);
+}
+
+.sidebar-mode-tab {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  font-family: 'Google Sans', 'Noto Sans JP', sans-serif;
+}
+
+.sidebar-mode-tab:hover {
+  color: #333;
+  background: rgba(0,0,0,0.04);
+}
+
+.sidebar-mode-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* === 条件検索フォーム === */
+.criteria-form {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.criteria-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.criteria-field label {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+}
+
+.criteria-field input,
+.criteria-field select {
+  padding: 6px 8px;
+  border: 1px solid var(--outline, #ddd);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.criteria-field input:focus,
+.criteria-field select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.criteria-row {
+  display: flex;
+  gap: 8px;
+}
+
+.criteria-row .criteria-field {
+  flex: 1;
+}
+
+.btn-criteria-search {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Google Sans', sans-serif;
+  transition: background 0.15s;
+}
+
+.btn-criteria-search:hover {
+  background: var(--primary-hover);
+}
+
+.btn-criteria-search .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* === サイドバーパネル === */
+.sidebar-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

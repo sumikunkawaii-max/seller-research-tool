@@ -1,4 +1,4 @@
-// === セラーリサーチツール ===
+// === リサーチツール ===
 // Amazonセラーの商品一覧をKeepa APIで取得・管理するツール
 
 'use strict';
@@ -38,6 +38,8 @@ let settings = { keepaApiKey: '' };
 let activeSellerIdState = null;
 let sortState = { key: null, dir: 'asc' };
 let searchQuery = '';
+let currentMode = 'seller';
+let currentProducts = []; // 条件検索結果用
 
 // === ユーティリティ ===
 
@@ -67,14 +69,23 @@ function showToast(message, type = 'success') {
 }
 
 // ローディング表示/非表示
-function showLoading(text) {
+function showLoading(showOrText, text) {
   const el = document.getElementById('loadingOverlay');
-  document.getElementById('loadingText').textContent = text || 'データを取得中...';
-  el.classList.add('active');
+  // 互換性: showLoading(text) の形式もサポート
+  if (typeof showOrText === 'boolean') {
+    el.classList.toggle('active', showOrText);
+    if (text) document.getElementById('loadingText').textContent = text;
+    else if (!showOrText) document.getElementById('loadingText').textContent = 'データを取得中...';
+  } else {
+    // 従来の showLoading(text) 形式
+    document.getElementById('loadingText').textContent = showOrText || 'データを取得中...';
+    el.classList.add('active');
+  }
 }
 
 function hideLoading() {
   document.getElementById('loadingOverlay').classList.remove('active');
+  document.getElementById('loadingText').textContent = 'データを取得中...';
 }
 
 // === localStorage操作 ===
@@ -490,6 +501,116 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// === モード切り替え ===
+
+// サイドバーのセラー検索/条件検索モード切り替え
+function switchMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.sidebar-mode-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sellerPanel').style.display = mode === 'seller' ? '' : 'none';
+  document.getElementById('criteriaPanel').style.display = mode === 'criteria' ? '' : 'none';
+}
+
+// === 条件検索 ===
+
+// Keepa Product Finder APIを使った条件検索
+async function searchByCriteria() {
+  const apiKey = settings.keepaApiKey;
+  if (!apiKey) {
+    showToast('Keepa APIキーを設定してください', 'error');
+    openSettings();
+    return;
+  }
+
+  // 検索条件を収集
+  const category = document.getElementById('criteriaCategory').value;
+  const priceMin = document.getElementById('criteriaPriceMin').value;
+  const priceMax = document.getElementById('criteriaPriceMax').value;
+  const salesMin = document.getElementById('criteriaSalesMin').value;
+  const salesMax = document.getElementById('criteriaSalesMax').value;
+  const sellersMin = document.getElementById('criteriaSellersMin').value;
+  const sellersMax = document.getElementById('criteriaSellersMax').value;
+  const rankMax = document.getElementById('criteriaRankMax').value;
+  const reviewsMin = document.getElementById('criteriaReviewsMin').value;
+  const sort = document.getElementById('criteriaSort').value;
+
+  // Keepa Product Finder の selection パラメータを構築
+  const selection = {};
+
+  if (category) selection.categoryIds = [parseInt(category)];
+  // domain=5（日本）では価格は円単位でそのまま指定
+  if (priceMin) selection.current_NEW_MIN = parseInt(priceMin);
+  if (priceMax) selection.current_NEW_MAX = parseInt(priceMax);
+  if (salesMin) selection.monthlySold_MIN = parseInt(salesMin);
+  if (salesMax) selection.monthlySold_MAX = parseInt(salesMax);
+  if (sellersMin) selection.current_COUNT_NEW_MIN = parseInt(sellersMin);
+  if (sellersMax) selection.current_COUNT_NEW_MAX = parseInt(sellersMax);
+  if (rankMax) selection.current_SALES_RANK_MAX = parseInt(rankMax);
+  if (reviewsMin) selection.current_COUNT_REVIEWS_MIN = parseInt(reviewsMin);
+
+  // ソート設定
+  selection.sort = [[sort, 'asc']];
+  selection.perPage = 50;
+  selection.page = 0;
+
+  showLoading(true, '条件検索中...');
+
+  try {
+    const url = 'https://api.keepa.com/query?key=' + encodeURIComponent(apiKey) + '&domain=5&selection=' + encodeURIComponent(JSON.stringify(selection));
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.error) {
+      hideLoading();
+      showToast('Keepa APIエラー: ' + JSON.stringify(data.error), 'error');
+      return;
+    }
+
+    const asinList = data.asinList || [];
+    if (!asinList.length) {
+      hideLoading();
+      showToast('条件に一致する商品が見つかりませんでした', 'error');
+      return;
+    }
+
+    showLoading(true, asinList.length + '件の商品データを取得中...');
+
+    // 商品詳細を取得（100件ずつ）
+    const products = await fetchProductsBatch(asinList, (done, total) => {
+      document.getElementById('loadingText').textContent =
+        '商品データを取得中... (' + done + '/' + total + ')';
+    });
+
+    hideLoading();
+
+    // 結果を表示（セラーと同じテーブルを使い回す）
+    document.getElementById('mainHeader').style.display = 'flex';
+    document.getElementById('sellerTitle').textContent = '条件検索結果';
+    document.getElementById('sellerProductCount').textContent = products.length + '件';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('tableCard').style.display = 'block';
+
+    // セラー選択状態をリセット（条件検索結果表示中）
+    activeSellerIdState = null;
+    saveActiveSeller(null);
+    renderSidebar();
+
+    // currentProductsに設定してテーブル描画
+    currentProducts = products;
+    sortState = { key: null, dir: 'asc' };
+    searchQuery = '';
+    const searchEl = document.getElementById('searchInput');
+    if (searchEl) searchEl.value = '';
+    renderTable(products);
+
+    showToast(products.length + '件の商品が見つかりました');
+  } catch (err) {
+    hideLoading();
+    showToast('検索エラー: ' + err.message, 'error');
+  }
+}
+
 // === 描画 ===
 
 // サイドバー描画
@@ -535,14 +656,16 @@ function renderMainArea() {
   const tableCard = document.getElementById('tableCard');
 
   if (!activeSellerIdState) {
+    // 条件検索結果が表示中の場合はそのまま維持
+    if (currentProducts.length > 0 && currentMode === 'criteria') return;
     // セラー未選択
     header.style.display = 'none';
     empty.style.display = 'flex';
     tableCard.style.display = 'none';
     empty.innerHTML =
-      '<span class="material-symbols-outlined empty-icon">person_search</span>' +
-      '<h3>セラーが選択されていません</h3>' +
-      '<p>左のサイドバーからセラーを追加・選択してください</p>';
+      '<span class="material-symbols-outlined empty-icon">search</span>' +
+      '<h3>リサーチを始めましょう</h3>' +
+      '<p>左のサイドバーからセラー検索または条件検索でリサーチできます</p>';
     return;
   }
 
@@ -684,8 +807,13 @@ function toggleSort(key) {
     sortState.key = key;
     sortState.dir = 'asc';
   }
+  // セラー選択中はセラーの商品、条件検索結果がある場合はそちらを使う
   const seller = sellers.find(s => s.id === activeSellerIdState);
-  if (seller) renderTable(seller.products);
+  if (seller) {
+    renderTable(seller.products);
+  } else if (currentProducts.length > 0) {
+    renderTable(currentProducts);
+  }
 }
 
 // === ASINコピー ===
@@ -707,15 +835,21 @@ function handleSearch(e) {
   const seller = sellers.find(s => s.id === activeSellerIdState);
   if (seller && seller.products.length > 0) {
     renderTable(seller.products);
+  } else if (currentProducts.length > 0) {
+    renderTable(currentProducts);
   }
 }
 
 // === 商品詳細モーダル ===
 function openDetailModal(asin) {
+  // セラーの商品または条件検索結果から商品を探す
+  let product = null;
   const seller = sellers.find(s => s.id === activeSellerIdState);
-  if (!seller) return;
-
-  const product = seller.products.find(p => p.asin === asin);
+  if (seller) {
+    product = seller.products.find(p => p.asin === asin);
+  } else if (currentProducts.length > 0) {
+    product = currentProducts.find(p => p.asin === asin);
+  }
   if (!product) return;
 
   const overlay = document.getElementById('detailOverlay');
