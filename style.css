@@ -1135,9 +1135,36 @@ body {
   background: var(--primary-hover);
 }
 
-.btn-criteria-search .material-symbols-outlined {
-  font-size: 18px;
+.btn-criteria-search .material-symbols-outlined { font-size: 18px; }
+
+.criteria-buttons { display: flex; gap: 6px; }
+.criteria-buttons .btn-criteria-search { flex: 1; }
+.btn-criteria-save {
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+  padding: 8px; border-radius: 8px; border: 1px solid var(--outline, #ddd);
+  background: none; cursor: pointer; font-size: 11px; color: #666;
+  font-family: 'Noto Sans JP', sans-serif; transition: all 0.15s;
 }
+.btn-criteria-save:hover { background: var(--surface-variant, #f5f5f5); color: #333; }
+.btn-criteria-save .material-symbols-outlined { font-size: 16px; }
+
+/* プリセット一覧 */
+.preset-section { margin-top: 8px; border-top: 1px solid var(--outline, #e0e0e0); padding-top: 8px; }
+.preset-header { font-size: 11px; font-weight: 500; color: #888; padding: 0 4px 4px; }
+.preset-list { display: flex; flex-direction: column; gap: 4px; }
+.preset-empty { font-size: 11px; color: #aaa; text-align: center; padding: 8px; }
+.preset-item {
+  padding: 8px 10px; border-radius: 6px; cursor: pointer; position: relative;
+  background: var(--surface-variant, #f5f5f5); transition: background 0.15s;
+}
+.preset-item:hover { background: #e3f2fd; }
+.preset-name { font-size: 12px; font-weight: 500; color: #333; }
+.preset-desc { font-size: 10px; color: #888; margin-top: 2px; }
+.preset-delete {
+  position: absolute; top: 4px; right: 4px; background: none; border: none;
+  color: #ccc; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px;
+}
+.preset-delete:hover { color: #dc2626; }
 
 /* === サイドバーパネル === */
 .sidebar-panel {

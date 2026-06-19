@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   sellers: 'sr_sellers',
   settings: 'sr_settings',
   activeSeller: 'sr_active',
+  presets: 'sr_presets',
 };
 
 // Keepa CSV_TYPE定数（利益計算ツールと同じ）
@@ -40,6 +41,7 @@ let sortState = { key: null, dir: 'asc' };
 let searchQuery = '';
 let currentMode = 'seller';
 let currentProducts = []; // 条件検索結果用
+let presets = []; // 保存済み検索条件
 
 // === ユーティリティ ===
 
@@ -611,6 +613,106 @@ async function searchByCriteria() {
   }
 }
 
+// === プリセット管理 ===
+
+function loadPresets() {
+  try { presets = JSON.parse(localStorage.getItem(STORAGE_KEYS.presets)) || []; }
+  catch { presets = []; }
+}
+function savePresets() { localStorage.setItem(STORAGE_KEYS.presets, JSON.stringify(presets)); }
+
+// 現在の条件をプリセットとして保存
+function saveCurrentCriteria() {
+  const name = prompt('検索条件の名前を入力してください:');
+  if (!name) return;
+
+  const criteria = collectCriteria();
+  presets.push({
+    id: Date.now(),
+    name: name,
+    criteria: criteria,
+    createdAt: new Date().toISOString(),
+  });
+  savePresets();
+  renderPresetList();
+  showToast('「' + name + '」を保存しました');
+}
+
+// フォームから検索条件を収集
+function collectCriteria() {
+  return {
+    category: document.getElementById('criteriaCategory').value,
+    priceMin: document.getElementById('criteriaPriceMin').value,
+    priceMax: document.getElementById('criteriaPriceMax').value,
+    salesMin: document.getElementById('criteriaSalesMin').value,
+    salesMax: document.getElementById('criteriaSalesMax').value,
+    sellersMin: document.getElementById('criteriaSellersMin').value,
+    sellersMax: document.getElementById('criteriaSellersMax').value,
+    rankMax: document.getElementById('criteriaRankMax').value,
+    reviewsMin: document.getElementById('criteriaReviewsMin').value,
+    sort: document.getElementById('criteriaSort').value,
+  };
+}
+
+// プリセットをフォームに読み込んで検索実行
+function loadPreset(presetId) {
+  const preset = presets.find(p => p.id === presetId);
+  if (!preset) return;
+  const c = preset.criteria;
+  document.getElementById('criteriaCategory').value = c.category || '';
+  document.getElementById('criteriaPriceMin').value = c.priceMin || '';
+  document.getElementById('criteriaPriceMax').value = c.priceMax || '';
+  document.getElementById('criteriaSalesMin').value = c.salesMin || '';
+  document.getElementById('criteriaSalesMax').value = c.salesMax || '';
+  document.getElementById('criteriaSellersMin').value = c.sellersMin || '';
+  document.getElementById('criteriaSellersMax').value = c.sellersMax || '';
+  document.getElementById('criteriaRankMax').value = c.rankMax || '';
+  document.getElementById('criteriaReviewsMin').value = c.reviewsMin || '';
+  document.getElementById('criteriaSort').value = c.sort || 'current_SALES';
+  searchByCriteria();
+}
+
+function deletePreset(presetId, event) {
+  if (event) event.stopPropagation();
+  if (!confirm('この検索条件を削除しますか？')) return;
+  presets = presets.filter(p => p.id !== presetId);
+  savePresets();
+  renderPresetList();
+  showToast('削除しました');
+}
+
+// プリセット一覧を描画
+function renderPresetList() {
+  const list = document.getElementById('presetList');
+  if (!list) return;
+  if (!presets.length) {
+    list.innerHTML = '<div class="preset-empty">保存済みの条件はありません</div>';
+    return;
+  }
+  list.innerHTML = presets.map(p => {
+    const desc = buildPresetDesc(p.criteria);
+    return '<div class="preset-item" onclick="loadPreset(' + p.id + ')" title="クリックで検索実行">' +
+      '<div class="preset-name">' + escHtml(p.name) + '</div>' +
+      '<div class="preset-desc">' + escHtml(desc) + '</div>' +
+      '<button class="preset-delete" onclick="deletePreset(' + p.id + ', event)" title="削除">x</button>' +
+      '</div>';
+  }).join('');
+}
+
+// プリセットの条件を短い説明文にする
+function buildPresetDesc(c) {
+  const parts = [];
+  if (c.category) {
+    const opt = document.querySelector('#criteriaCategory option[value="' + c.category + '"]');
+    if (opt) parts.push(opt.textContent);
+  }
+  if (c.priceMin || c.priceMax) parts.push('¥' + (c.priceMin || '0') + '-' + (c.priceMax || ''));
+  if (c.salesMin) parts.push('月' + c.salesMin + '個+');
+  if (c.sellersMax) parts.push('出品者' + c.sellersMax + '人以下');
+  if (c.rankMax) parts.push('ランク' + Number(c.rankMax).toLocaleString() + '以内');
+  return parts.join(' / ') || '条件なし';
+}
+
 // === 描画 ===
 
 // サイドバー描画
@@ -996,6 +1098,7 @@ document.addEventListener('DOMContentLoaded', () => {
   sellers = loadSellers();
   settings = loadSettings();
   activeSellerIdState = loadActiveSeller();
+  loadPresets();
 
   // アクティブセラーが存在しない場合はリセット
   if (activeSellerIdState && !sellers.find(s => s.id === activeSellerIdState)) {
@@ -1020,5 +1123,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 初期描画
   renderSidebar();
+  renderPresetList();
   renderMainArea();
 });

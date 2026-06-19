@@ -113,9 +113,18 @@
             <option value="current_NEW">価格順</option>
           </select>
         </div>
-        <button class="btn-criteria-search" onclick="searchByCriteria()">
-          <span class="material-symbols-outlined">search</span> 検索
-        </button>
+        <div class="criteria-buttons">
+          <button class="btn-criteria-search" onclick="searchByCriteria()">
+            <span class="material-symbols-outlined">search</span> 検索
+          </button>
+          <button class="btn-criteria-save" onclick="saveCurrentCriteria()">
+            <span class="material-symbols-outlined">bookmark_add</span> 条件を保存
+          </button>
+        </div>
+        <div class="preset-section">
+          <div class="preset-header">保存済みの条件</div>
+          <div class="preset-list" id="presetList"></div>
+        </div>
       </div>
     </div>
 
