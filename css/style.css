@@ -1,0 +1,208 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans JP', sans-serif; background: #f1f3f4; color: #202124; font-size: 14px; line-height: 1.5; min-height: 100vh; }
+.mb-16 { margin-bottom: 16px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+
+/* === ログイン === */
+.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f1f3f4; padding: 16px; }
+.login-card { width: 100%; max-width: 440px; background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 40px; }
+.login-logo { text-align: center; margin-bottom: 24px; }
+.login-logo h1 { font-size: 22px; font-weight: 700; color: #202124; }
+.logo-icon { width: 40px; height: 40px; background: #FF9900; border-radius: 8px; margin: 0 auto 8px; }
+.login-subtitle { text-align: center; font-size: 15px; color: #5f6368; margin-bottom: 20px; }
+.login-email { text-align: center; font-size: 12px; color: #94a3b8; margin-bottom: 16px; }
+.account-btn { width: 100%; text-align: left; padding: 12px 16px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; cursor: pointer; margin-bottom: 8px; transition: all .15s; }
+.account-btn:hover { border-color: #1a73e8; background: #eff6ff; }
+.account-btn.selected { border-color: #1a73e8; background: #eff6ff; }
+.account-btn-name { font-size: 13px; font-weight: 600; color: #202124; }
+.account-btn-email { font-size: 11px; color: #94a3b8; }
+.saved-accounts-section { margin-bottom: 16px; }
+.saved-accounts-section .divider { border-top: 1px solid #e0e0e0; margin: 16px 0 12px; text-align: center; }
+.saved-accounts-section .divider span { background: #fff; padding: 0 12px; font-size: 11px; color: #94a3b8; position: relative; top: -9px; }
+.btn-text-link { display: block; width: 100%; text-align: center; padding: 8px; background: none; border: none; color: #1a73e8; font-size: 12px; cursor: pointer; }
+.btn-text-link:hover { text-decoration: underline; }
+.error-msg { padding: 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; color: #dc2626; font-size: 12px; margin-bottom: 12px; }
+
+/* === ヘッダー === */
+.header { background: #1a73e8; color: #fff; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+.header-inner { max-width: 1400px; margin: 0 auto; padding: 0 16px; height: 52px; display: flex; align-items: center; gap: 16px; }
+.header-title { font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.header-nav { display: flex; gap: 2px; }
+.nav-btn { background: rgba(255,255,255,.1); border: none; color: rgba(255,255,255,.8); padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: inherit; }
+.nav-btn:hover { background: rgba(255,255,255,.2); }
+.nav-btn.active { background: rgba(255,255,255,.25); color: #fff; }
+.header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.account-name { font-size: 11px; color: rgba(255,255,255,.8); }
+
+/* === ボタン === */
+.btn { display: inline-flex; align-items: center; gap: 4px; padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all .15s; font-family: inherit; }
+.btn-sm { padding: 5px 14px; font-size: 11px; }
+.btn-full { width: 100%; justify-content: center; }
+.btn-primary { background: #1a73e8; color: #fff; }
+.btn-primary:hover { background: #1557b0; }
+.btn-green { background: #059669; color: #fff; }
+.btn-outlined { background: #fff; color: #5f6368; border: 1px solid #dadce0; }
+.btn-outlined:hover { background: #f8f9fa; }
+.btn-danger { background: #dc2626; color: #fff; }
+.btn-icon { background: rgba(255,255,255,.1); border: none; color: rgba(255,255,255,.8); padding: 6px; border-radius: 50%; cursor: pointer; display: flex; }
+.btn-icon:hover { background: rgba(255,255,255,.2); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* === メイン === */
+.main { max-width: 1400px; margin: 0 auto; padding: 20px 16px; }
+.page { display: none; }
+.page.active { display: block; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.page-title { font-size: 16px; font-weight: 700; }
+.add-seller-form { display: flex; gap: 6px; }
+.header-input { background: #fff; border: 1px solid #dadce0; color: #202124; font-size: 12px; padding: 6px 12px; border-radius: 6px; outline: none; width: 180px; font-family: monospace; }
+.header-input:focus { border-color: #1a73e8; }
+.month-select { display: flex; gap: 6px; }
+.month-select select { padding: 6px 10px; border: 1px solid #dadce0; border-radius: 6px; font-size: 12px; background: #fff; font-family: inherit; }
+
+/* === サマリーバー === */
+.summary-bar { display: flex; background: #fff; border-radius: 10px; border: 1px solid #e0e0e0; overflow: hidden; margin-bottom: 20px; }
+.summary-item { flex: 1; text-align: center; padding: 16px; }
+.summary-item + .summary-item { border-left: 1px solid #f0f0f0; }
+.summary-num { font-size: 24px; font-weight: 800; color: #64748b; }
+.summary-label { font-size: 10px; font-weight: 600; color: #94a3b8; margin-top: 2px; }
+
+/* === 利益サマリ === */
+.profit-summary { display: flex; gap: 0; background: #fff; border-radius: 10px; border: 1px solid #e0e0e0; overflow: hidden; margin-bottom: 16px; }
+.profit-item { flex: 1; text-align: center; padding: 14px 8px; }
+.profit-item + .profit-item { border-left: 1px solid #f0f0f0; }
+.profit-num { font-size: 20px; font-weight: 800; }
+.profit-label { font-size: 9px; font-weight: 600; color: #94a3b8; margin-top: 2px; }
+.c-blue { color: #202124; }
+.c-yellow { color: #d97706; }
+.c-gray { color: #64748b; }
+.c-red { color: #dc2626; }
+.c-green { color: #059669; }
+.bg-green { background: #ecfdf5; }
+
+/* === セラーカード === */
+.seller-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+.seller-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px; transition: box-shadow .15s; cursor: pointer; }
+.seller-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.seller-card.stale { border-color: #fbbf24; background: #fffbeb; }
+.seller-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.seller-card-name { font-size: 13px; font-weight: 700; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
+.seller-card-date { font-size: 10px; color: #94a3b8; }
+.seller-card-date.stale { color: #b45309; font-weight: 600; }
+.seller-card-stats { display: flex; gap: 8px; }
+.stat-box { flex: 1; text-align: center; padding: 8px 4px; border-radius: 6px; cursor: pointer; transition: transform .1s; border: none; font-family: inherit; }
+.stat-box:hover { transform: scale(1.03); }
+.stat-box.s-active { background: #eff6ff; }
+.stat-box.s-new { background: #ecfdf5; }
+.stat-box.s-removed { background: #fef2f2; }
+.stat-num { font-size: 20px; font-weight: 800; }
+.stat-num.s-active { color: #1a73e8; }
+.stat-num.s-new { color: #059669; }
+.stat-num.s-removed { color: #dc2626; }
+.stat-label { font-size: 9px; font-weight: 600; color: #94a3b8; }
+
+/* === セラー詳細 === */
+.seller-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; gap: 8px; }
+.seller-info h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.seller-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #94a3b8; flex-wrap: wrap; }
+.seller-meta a { color: #94a3b8; cursor: pointer; text-decoration: none; }
+.seller-meta a:hover { color: #dc2626; text-decoration: underline; }
+.seller-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* === CSVドロップ === */
+.csv-drop { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #f9fafb; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; transition: all .15s; }
+.csv-drop.dragging { border-color: #059669; border-style: dashed; background: #ecfdf5; }
+.csv-drop-text { font-size: 11px; color: #94a3b8; }
+.csv-drop.dragging .csv-drop-text { color: #059669; }
+
+/* === フィルターバー === */
+.filter-bar { display: flex; background: #fff; border-radius: 8px; border: 1px solid #e0e0e0; overflow: hidden; margin-bottom: 12px; }
+.filter-item { flex: 1; text-align: center; padding: 12px; cursor: pointer; transition: background .15s; border: none; background: none; font-family: inherit; }
+.filter-item + .filter-item { border-left: 1px solid #f0f0f0; }
+.filter-item:hover { background: #f8f9fa; }
+.filter-item.selected { background: #eff6ff; }
+.filter-num { font-size: 22px; font-weight: 800; }
+.filter-num.f-active { color: #1a73e8; }
+.filter-num.f-new { color: #059669; }
+.filter-num.f-removed { color: #dc2626; }
+.filter-label { font-size: 9px; font-weight: 600; color: #94a3b8; }
+
+/* === 検索 === */
+.search-input { width: 220px; padding: 6px 12px; font-size: 12px; border: 1px solid #dadce0; border-radius: 6px; outline: none; margin-bottom: 12px; background: #fff; }
+.search-input:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,.15); }
+
+/* === テーブル === */
+.product-table-wrap { overflow-x: auto; }
+.product-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #e0e0e0; }
+.product-table th { padding: 10px 12px; font-size: 11px; font-weight: 600; color: #5f6368; background: #f8f9fa; text-align: left; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
+.product-table th.sortable { cursor: pointer; user-select: none; }
+.product-table th.sortable:hover { color: #1a73e8; }
+.product-table td { padding: 8px 12px; font-size: 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+.product-table tr:hover td { background: #fafbfc; }
+.product-table tr.total-row td { background: #f8f9fa; font-weight: 600; }
+.col-img { width: 70px; }
+.col-asin { width: 120px; }
+.col-price { width: 90px; text-align: right; }
+.col-rank { width: 80px; text-align: right; }
+.col-link { width: 50px; text-align: center; }
+.product-img { width: 56px; height: 56px; object-fit: contain; border: 1px solid #f0f0f0; border-radius: 4px; }
+.asin-link { font-family: monospace; font-size: 11px; color: #1a73e8; text-decoration: none; }
+.asin-link:hover { text-decoration: underline; }
+.product-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+.link-btn { color: #5f6368; text-decoration: none; font-size: 10px; font-weight: 600; padding: 4px 8px; border: 1px solid #dadce0; border-radius: 4px; }
+.link-btn:hover { background: #f0f0f0; }
+.del-btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 11px; }
+.del-btn:hover { color: #dc2626; }
+
+/* === 表示切替 === */
+.view-toggle { display: flex; background: #f1f3f4; border-radius: 8px; padding: 2px; margin-bottom: 12px; width: fit-content; }
+.toggle-btn { padding: 6px 16px; border: none; background: none; font-size: 11px; font-weight: 600; color: #5f6368; border-radius: 6px; cursor: pointer; font-family: inherit; }
+.toggle-btn.active { background: #1a73e8; color: #fff; }
+
+/* === フォーム === */
+.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; }
+.card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.card-title-sm { font-size: 14px; font-weight: 700; }
+.card-header-row { display: flex; align-items: center; justify-content: space-between; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 3px; color: #5f6368; }
+.form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.flex1 { flex: 1; min-width: 120px; }
+.input { width: 100%; padding: 8px 12px; font-size: 13px; border: 1px solid #dadce0; border-radius: 6px; outline: none; font-family: inherit; }
+.input:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,.15); }
+.hint { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+.form-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* === プレビュー === */
+.profit-preview { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 16px; margin-top: 10px; }
+.preview-row { display: flex; gap: 16px; font-size: 12px; flex-wrap: wrap; }
+.preview-label { color: #5f6368; }
+.preview-profit { font-weight: 700; }
+.preview-profit.positive { color: #059669; }
+.preview-profit.negative { color: #dc2626; }
+
+/* === 空状態 === */
+.empty-state { text-align: center; padding: 48px 16px; color: #5f6368; }
+.text-muted { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+/* === スナックバー === */
+.snackbar { position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%); background: #323232; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 200; transition: bottom .3s; white-space: nowrap; }
+.snackbar.show { bottom: 24px; }
+
+/* === レスポンシブ === */
+@media (max-width: 768px) {
+  .header-inner { gap: 8px; flex-wrap: wrap; height: auto; padding: 8px 12px; }
+  .header-nav { order: 3; width: 100%; }
+  .nav-btn { flex: 1; text-align: center; }
+  .main { padding: 12px; }
+  .seller-grid { grid-template-columns: 1fr; }
+  .profit-summary { flex-wrap: wrap; }
+  .profit-item { min-width: 33%; }
+  .search-input { width: 100%; }
+  .seller-header { flex-direction: column; }
+  .form-row { flex-direction: column; }
+  .flex1 { min-width: 100%; }
+  .page-header { flex-direction: column; align-items: flex-start; }
+  .login-card { padding: 24px; }
+}

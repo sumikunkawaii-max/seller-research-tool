@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>セラーリサーチツール</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a73e8">
+  <link rel="icon" href="icon-192.svg">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+</head>
+<body>
+  <!-- サイドバー -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="material-symbols-outlined sidebar-icon">storefront</span>
+      <h2>セラー一覧</h2>
+    </div>
+    <div class="sidebar-add">
+      <input type="text" id="sellerIdInput" placeholder="セラーID または URL" spellcheck="false" autocomplete="off">
+      <button class="btn-add-seller" onclick="addSeller()">
+        <span class="material-symbols-outlined">add</span> 追加
+      </button>
+    </div>
+    <div class="sidebar-list" id="sellerList">
+      <!-- セラー一覧がここに描画される -->
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-sidebar-footer" onclick="openSettings()">
+        <span class="material-symbols-outlined">settings</span> 設定
+      </button>
+    </div>
+  </aside>
+
+  <!-- メインエリア -->
+  <div class="main-content">
+    <!-- ヘッダーバー -->
+    <header class="main-header" id="mainHeader" style="display:none;">
+      <div class="main-header-left">
+        <h1 class="seller-title" id="sellerTitle">セラー名</h1>
+        <span class="seller-product-count" id="sellerProductCount"></span>
+      </div>
+      <div class="main-header-right">
+        <div class="header-search-group">
+          <span class="material-symbols-outlined" style="font-size:18px;color:var(--on-surface-variant);">search</span>
+          <input type="text" class="header-search-input" id="searchInput" placeholder="商品名・ASINで検索">
+        </div>
+        <button class="btn-fetch" id="fetchBtn" onclick="fetchSellerProducts()">
+          <span class="material-symbols-outlined">sync</span> 全商品取得
+        </button>
+        <button class="btn-fetch btn-fetch-secondary" onclick="refreshSellerProducts()">
+          <span class="material-symbols-outlined">refresh</span> 更新
+        </button>
+      </div>
+    </header>
+
+    <!-- 空状態 -->
+    <div class="empty-state" id="emptyState">
+      <span class="material-symbols-outlined empty-icon">person_search</span>
+      <h3>セラーが選択されていません</h3>
+      <p>左のサイドバーからセラーを追加・選択してください</p>
+    </div>
+
+    <!-- テーブル -->
+    <section class="table-card" id="tableCard" style="display:none;">
+      <div class="table-container" id="tableContainer">
+        <table class="product-table" id="productTable">
+          <thead id="productTableHead"></thead>
+          <tbody id="productTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- 商品詳細モーダル -->
+  <div class="modal-overlay" id="detailOverlay" onclick="closeDetailModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title" id="detailTitle">商品詳細</h2>
+        <button class="btn-icon" onclick="closeDetailModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body" id="detailBody"></div>
+    </div>
+  </div>
+
+  <!-- 設定モーダル -->
+  <div class="modal-overlay" id="settingsOverlay" onclick="closeSettings(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <span class="material-symbols-outlined" style="font-size:22px;vertical-align:middle;margin-right:8px;">settings</span>設定
+        </h2>
+        <button class="btn-icon" onclick="closeSettings()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body" id="settingsBody"></div>
+    </div>
+  </div>
+
+  <!-- セラー削除確認モーダル -->
+  <div class="modal-overlay" id="confirmOverlay" onclick="closeConfirm(event)">
+    <div class="modal modal-small" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title" id="confirmTitle">確認</h2>
+        <button class="btn-icon" onclick="closeConfirm()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body" id="confirmBody"></div>
+    </div>
+  </div>
+
+  <!-- トースト -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ローディング -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <p class="loading-text" id="loadingText">データを取得中...</p>
+  </div>
+
+  <script>
+    // PWA Service Worker登録
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') {
+              if (confirm('ツールが更新されました。今すぐ反映しますか？')) {
+                location.reload();
+              }
+            }
+          });
+        });
+      });
+    }
+  </script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
