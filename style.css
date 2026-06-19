@@ -1,3 +1,17 @@
+/* === ツール切り替えバー === */
+.tool-switcher-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+  display: flex; gap: 0; background: #fff; border-bottom: 1px solid #e0e0e0;
+  padding: 0 16px; height: 36px; align-items: center;
+}
+.tool-tab {
+  padding: 6px 16px; font-size: 13px; font-weight: 500; text-decoration: none;
+  color: #666; border-bottom: 2px solid transparent; transition: all 0.15s;
+  font-family: 'Google Sans', 'Noto Sans JP', sans-serif; line-height: 22px;
+}
+.tool-tab:hover { color: #333; background: rgba(0,0,0,0.04); }
+.tool-tab.active { color: var(--primary, #1a73e8); border-bottom-color: var(--primary, #1a73e8); }
+
 /* === CSS Variables (利益計算ツールと同じカラーパレット) === */
 :root {
   --primary: #1a73e8;
@@ -57,7 +71,7 @@ body {
   width: 240px;
   position: fixed;
   left: 0;
-  top: 0;
+  top: 36px;
   bottom: 0;
   background: var(--surface);
   border-right: 1px solid var(--outline);
@@ -242,6 +256,7 @@ body {
 /* === メインコンテンツ === */
 .main-content {
   margin-left: 240px;
+  margin-top: 36px;
   flex: 1;
   display: flex;
   flex-direction: column;
