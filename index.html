@@ -166,6 +166,10 @@
         <button class="btn-fetch btn-fetch-secondary" onclick="refreshSellerProducts()">
           <span class="material-symbols-outlined">refresh</span> 更新
         </button>
+        <button class="btn-fetch btn-fetch-secondary" onclick="openCsvImport()">
+          <span class="material-symbols-outlined">upload_file</span> CSV取込
+        </button>
+        <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none" onchange="handleCsvFile(this)">
       </div>
     </header>
 

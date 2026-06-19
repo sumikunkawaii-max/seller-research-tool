@@ -719,11 +719,27 @@ function buildPresetDesc(c) {
 // === 監視機能 ===
 
 // Keepa Product Finder URLから条件をパース
-function parseKeepaFinderUrl(url) {
+function parseKeepaFinderUrl(input) {
   try {
-    const match = url.match(/#!finder\/(.+)/);
-    if (!match) return null;
-    const decoded = decodeURIComponent(match[1]);
+    let jsonStr = '';
+    // パターン1: 完全URL（https://keepa.com/#!finder/...）
+    const m1 = input.match(/#!finder\/(.+)/);
+    if (m1) jsonStr = m1[1];
+    // パターン2: finder/から始まる部分URL
+    if (!jsonStr) {
+      const m2 = input.match(/^finder\/(.+)/);
+      if (m2) jsonStr = m2[1];
+    }
+    // パターン3: URLエンコードされたJSON（{で始まる）
+    if (!jsonStr) {
+      const m3 = input.match(/%7B.+%7D/i);
+      if (m3) jsonStr = m3[0];
+    }
+    // パターン4: 生のJSON
+    if (!jsonStr && input.includes('{')) jsonStr = input;
+
+    if (!jsonStr) return null;
+    const decoded = decodeURIComponent(jsonStr);
     return JSON.parse(decoded);
   } catch { return null; }
 }
@@ -732,12 +748,16 @@ function parseKeepaFinderUrl(url) {
 function addMonitor() {
   const input = document.getElementById('monitorUrlInput');
   const url = input.value.trim();
-  if (!url || !url.includes('keepa.com')) {
+  if (!url) {
     showToast('Keepa Product FinderのURLを貼り付けてください', 'error');
     return;
   }
 
   const criteria = parseKeepaFinderUrl(url);
+  if (!criteria) {
+    showToast('URLの解析に失敗しました。Keepa Product Finderのページで条件を設定した後、ブラウザのURLをそのままコピーして貼り付けてください', 'error');
+    return;
+  }
   const name = prompt('この監視条件の名前を入力してください:');
   if (!name) return;
 
@@ -1318,6 +1338,128 @@ function openDetailModal(asin) {
 function closeDetailModal(event) {
   if (event && event.target !== event.currentTarget) return;
   document.getElementById('detailOverlay').classList.remove('active');
+}
+
+// === CSVインポート ===
+
+// CSVインポートダイアログを開く
+function openCsvImport() {
+  document.getElementById('csvFileInput').click();
+}
+
+// CSVファイルを読み込んで商品データに変換
+function handleCsvFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const csv = e.target.result;
+      const products = parseCsvToProducts(csv);
+      if (!products.length) {
+        showToast('CSVから商品データを取得できませんでした', 'error');
+        return;
+      }
+
+      // 現在選択中のセラーに商品を設定
+      if (activeSellerIdState) {
+        const seller = sellers.find(s => s.id === activeSellerIdState);
+        if (seller) {
+          seller.products = products;
+          seller.lastFetched = new Date().toISOString();
+          saveSellers();
+          renderMainArea();
+          renderSidebar();
+          showToast(products.length + '件の商品をインポートしました');
+          return;
+        }
+      }
+
+      // セラー未選択の場合は検索結果として表示
+      currentProducts = products;
+      document.getElementById('mainHeader').style.display = 'flex';
+      document.getElementById('sellerTitle').textContent = 'CSVインポート';
+      document.getElementById('sellerProductCount').textContent = products.length + '件';
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('tableCard').style.display = 'block';
+      renderTable(products);
+      showToast(products.length + '件の商品をインポートしました');
+    } catch (err) {
+      showToast('CSV読み込みエラー: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// KeepaエクスポートCSVをパース
+function parseCsvToProducts(csv) {
+  const lines = csv.split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length < 2) return [];
+
+  // ヘッダー行を解析（タブ区切りまたはカンマ区切り）
+  const sep = lines[0].includes('\t') ? '\t' : ',';
+  const headers = lines[0].split(sep).map(h => h.replace(/^"|"$/g, '').trim());
+
+  // ヘッダー名からインデックスを特定（Keepaの英語ヘッダーに対応）
+  const colMap = {};
+  headers.forEach((h, i) => {
+    const lower = h.toLowerCase();
+    if (lower.includes('asin')) colMap.asin = i;
+    else if (lower === 'title' || lower.includes('product name') || lower === 'locale') colMap.title = i;
+    else if (lower.includes('sales rank') && lower.includes('current')) colMap.salesRankCurrent = i;
+    else if (lower.includes('sales rank') && lower.includes('avg')) colMap.salesRankAvg = i;
+    else if (lower.includes('buy box') && lower.includes('current')) colMap.buyBoxCurrent = i;
+    else if (lower.includes('new') && lower.includes('current') && !lower.includes('count')) colMap.newPriceCurrent = i;
+    else if (lower.includes('new') && lower.includes('count') && lower.includes('current')) colMap.newSellerCount = i;
+    else if (lower.includes('count of') && lower.includes('new')) colMap.newSellerCount = i;
+    else if (lower.includes('category')) colMap.category = i;
+    else if (lower.includes('brand')) colMap.brand = i;
+    else if (lower.includes('rating')) colMap.rating = i;
+    else if (lower.includes('review') && lower.includes('count')) colMap.reviewCount = i;
+    else if (lower.includes('monthly sold') || lower.includes('bought')) colMap.monthlySold = i;
+    else if (lower.includes('drops') && lower.includes('90')) colMap.salesRankDrops90 = i;
+    else if (lower.includes('image')) colMap.image = i;
+    else if (lower.includes('title')) colMap.title = i;
+  });
+
+  if (colMap.asin === undefined) {
+    // ASINカラムが見つからない場合、最初のカラムを試す
+    colMap.asin = 0;
+  }
+
+  const products = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(sep).map(c => c.replace(/^"|"$/g, '').trim());
+    const asin = cols[colMap.asin];
+    if (!asin || !/^[A-Z0-9]{10}$/i.test(asin)) continue;
+
+    const parseNum = (idx) => {
+      if (idx === undefined || !cols[idx]) return null;
+      const n = parseFloat(cols[idx].replace(/[,¥$€£]/g, ''));
+      return isNaN(n) ? null : Math.round(n);
+    };
+
+    products.push({
+      asin: asin.toUpperCase(),
+      title: cols[colMap.title] || '',
+      imageUrl: cols[colMap.image] || null,
+      currentPrice: parseNum(colMap.buyBoxCurrent) || parseNum(colMap.newPriceCurrent),
+      avg90BuyBoxPrice: null,
+      avg90SalesRank: parseNum(colMap.salesRankAvg),
+      salesRankDrops90: parseNum(colMap.salesRankDrops90),
+      monthlySold: parseNum(colMap.monthlySold),
+      avg90NewSellerCount: parseNum(colMap.newSellerCount),
+      category: cols[colMap.category] || '',
+      brand: cols[colMap.brand] || '',
+      rating: colMap.rating !== undefined ? parseFloat(cols[colMap.rating]) || null : null,
+      reviewCount: parseNum(colMap.reviewCount),
+      sizeCm: null,
+      weightG: null,
+      lastUpdated: new Date().toISOString(),
+    });
+  }
+  return products;
 }
 
 // === 設定モーダル ===
