@@ -1,7 +1,7 @@
 {
-  "name": "リサーチツール",
-  "short_name": "リサーチ",
-  "description": "Amazonセラーの商品一覧をリサーチするツール",
+  "name": "Amazon せどり管理ツール",
+  "short_name": "せどり管理",
+  "description": "Amazon せどりの利益管理・セラーリサーチ統合ツール",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
