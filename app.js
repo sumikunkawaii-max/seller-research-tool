@@ -695,8 +695,8 @@ function renderPresetList() {
   list.innerHTML = presets.map(p => {
     const desc = buildPresetDesc(p.criteria);
     return '<div class="preset-item" onclick="loadPreset(' + p.id + ')" title="クリックで検索実行">' +
-      '<div class="preset-name">' + escHtml(p.name) + '</div>' +
-      '<div class="preset-desc">' + escHtml(desc) + '</div>' +
+      '<div class="preset-name">' + escapeHtml(p.name) + '</div>' +
+      '<div class="preset-desc">' + escapeHtml(desc) + '</div>' +
       '<button class="preset-delete" onclick="deletePreset(' + p.id + ', event)" title="削除">x</button>' +
       '</div>';
   }).join('');
